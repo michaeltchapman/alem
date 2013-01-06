@@ -1,5 +1,6 @@
-from panda3d.core import Point2
-
+from panda3d.core import Point2, Point3, NodePath
+from math import atan2, pi, degrees
+from sys import path
 
 class Player():
     left_move = False
@@ -7,15 +8,22 @@ class Player():
     up_move = False
     down_move = False
 
-    move_speed = 0.1
+    move_speed = 0.05
 
     def __init__(self, app):
-        self.position = Point2(0,0)
+        self.position = Point3(6,6,0)
         self.health = 100
+        self.np = app.render.attachNewNode("player")
+        self.np.setPos(self.position)
         self.model = app.loader.loadModel('models/box')
+
+        self.model = app.loader.loadModel('models/aneta')
+        self.model.reparentTo(self.np)
         self.model.setScale(0.5)
-        self.model.reparentTo(app.render)
-        self.model.setPos(self.position.x, self.position.y, 0)
+        #self.model.setPos(-0.25,-0.25, 0)
+        self.model.setPos(0,0, 0)
+        self.model.setHpr(90,0,0)
+        self.app = app
 
     def update(self, timer):
         if self.left_move:
@@ -26,8 +34,24 @@ class Player():
             self.position.y = self.position.y + self.move_speed
         if self.down_move:
             self.position.y = self.position.y - self.move_speed
-        print self.position
-        self.model.setPos(self.position.x, self.position.y, 0)
+
+        self.np.setPos(self.position.x, self.position.y, 0)
+
+        mouse = self.app.mouse_pos
+        near = Point3()
+        far = Point3()
+        self.app.camLens.extrude(mouse, near, far)
+        camp = self.app.camera.getPos()
+        near *= 20
+
+        if near.x != 0:
+            #angle = atan2(near.z + camp.y - self.position.y, near.x + camp.x - self.position.x)
+            angle = atan2(near.z, near.x)
+        else:
+            angle = pi/2 
+
+        self.angle = angle
+        self.np.setHpr(degrees(angle), 0, 0)
 
         return
 
@@ -42,6 +66,10 @@ class Player():
 
     def move_down(self, switch):
         self.down_move = switch
+    
+    def activate(self):
+        self.app.spawn_bullet(self)
+
 
 
 

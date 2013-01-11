@@ -1,7 +1,7 @@
 from random import randint, random, uniform
 from math import atan2, degrees, radians, sin, cos
 
-from panda3d.core import Vec3
+from panda3d.core import Vec3, CollisionNode, CollisionSphere, CollisionHandlerQueue, BitMask32
 
 from direct.actor.Actor import Actor
 
@@ -15,25 +15,66 @@ class EnemyManager():
         self.model.loop("walk")
         self.model.hide()
 
+        self.enemies = {}
+
     def add_instance(self,enemy):
         self.model.show()
         self.model.instanceTo(enemy.np)
+        self.enemies[enemy.cn.getName()] = enemy
+
+    def handle_collision(self, enemy, target, timer):
+        self.enemies[enemy].apply_effect(target, timer)
 
 class Enemy():
     movespeed = 0.01
+    activate_delay = 0.1
     def __init__(self, pos, index, app, manager):
         self.position = pos
         self.app = app
+        self.hp = 50
 
         self.np = app.render.attachNewNode("enemy%d" % index)
         self.np.setPos(self.position)
 
-        manager.add_instance(self)
-
         self.np.setHpr(uniform(1,360),0,0)
+
+        colsize = 0.2
+        self.cn = self.np.attachNewNode(CollisionNode('enemy_cn_%d' % index))
+        self.cs0 = CollisionSphere(colsize/2,0.0,0.0,colsize)
+        self.cs1 = CollisionSphere(-colsize/2,0.0,0.0,colsize)
+        self.cn.node().addSolid(self.cs0)
+        self.cn.node().addSolid(self.cs1)
+        self.cn.show() # debug
+
+        self.cqueue = CollisionHandlerQueue()
+        app.cTrav.addCollider(self.cn, self.cqueue)
+
+        self.cn.node().setIntoCollideMask(BitMask32(0x01))
+        self.cn.node().setFromCollideMask(BitMask32(0x10))
+
+        self.last_activated = 0.0
+
+        manager.add_instance(self)
     
     def update(self, time):
+        a = 0
+        # Handle collsions
+        for i in range(self.cqueue.getNumEntries()):
+           collided_name = self.cqueue.getEntry(i).getIntoNodePath().getName()
+           #handle bullets
+           if ("bullet" in collided_name):
+               bullet = self.app.bullet_manager.get_bullet(collided_name)
+               bullet.apply_effect(self)
+               self.app.bullet_manager.remove_bullet(collided_name)
+
+           #handle player    
+           #elif ("player" in collided_name):
+           #    self.apply_effect(self.app.player)
+            
         # turn to look at player
+        if self.cqueue.getNumEntries() != 0:
+            self.np.setColorScale(1.0, self.hp / 100.0, self.hp / 100.0, 1.0)
+
         desired = self.app.player.position - self.np.getPos()
         angle = degrees(atan2(desired.y, desired.x))
 
@@ -66,7 +107,12 @@ class Enemy():
         diff = Vec3(self.movespeed * cos(r), self.movespeed * sin(r), 0)
         self.np.setPos(curr + diff)
 
+        if self.hp < 0.0:
+            self.app.scene.remove(self)
+            self.np.removeNode()
 
-        #self.np.setPos()
 
-
+    def apply_effect(self, target, timer):
+        if self.last_activated - timer + self.activate_delay < 0.0:
+            self.last_activated = timer
+            target.hp = target.hp - 10

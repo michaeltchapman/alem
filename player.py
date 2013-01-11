@@ -1,4 +1,4 @@
-from panda3d.core import Point2, Point3, NodePath
+from panda3d.core import Point2, Point3, NodePath, CollisionNode, CollisionSphere, CollisionHandlerQueue, BitMask32
 from math import atan2, pi, degrees
 from sys import path
 
@@ -7,25 +7,54 @@ class Player():
     right_move = False
     up_move = False
     down_move = False
+    activate_switch = False
 
     move_speed = 0.05
+    activate_delay = 0.07
 
     def __init__(self, app):
         self.position = Point3(6,6,0)
-        self.health = 100
+        self.hp = 100
+        self.dead = False
         self.np = app.render.attachNewNode("player")
         self.np.setPos(self.position)
-        self.model = app.loader.loadModel('models/box')
 
         self.model = app.loader.loadModel('models/aneta')
+        #self.model = app.loader.loadModel('models/box')
         self.model.reparentTo(self.np)
         self.model.setScale(0.5)
-        #self.model.setPos(-0.25,-0.25, 0)
         self.model.setPos(0,0, 0)
         self.model.setHpr(90,0,0)
         self.app = app
 
+        self.cn = self.np.attachNewNode(CollisionNode('player'))
+        self.cs = CollisionSphere(0,0.0,0.0,0.25)
+        self.cn.node().addSolid(self.cs)
+
+        self.cn.show()
+
+        self.cqueue = CollisionHandlerQueue()
+        app.cTrav.addCollider(self.cn, self.cqueue)
+
+        self.cn.node().setIntoCollideMask(BitMask32(0x00))
+        self.cn.node().setFromCollideMask(BitMask32(0x01))
+
+        self.last_activated = 0.0
+
     def update(self, timer):
+
+
+        if self.cqueue.getNumEntries() != 0:
+            self.np.setColorScale(1.0, self.hp / 100.0, self.hp / 100.0, 1.0)
+        for i in range(self.cqueue.getNumEntries()):
+            collided_name = self.cqueue.getEntry(i).getIntoNodePath().getName()
+            if collided_name[0] == 'e':
+                self.app.enemy_manager.handle_collision(collided_name, self, timer)
+                
+        if self.activate_switch and self.last_activated - timer + self.activate_delay < 0.0:
+            self.app.spawn_bullet(self)
+            self.last_activated = timer
+
         if self.left_move:
             self.position.x = self.position.x - self.move_speed
         if self.right_move:
@@ -45,6 +74,7 @@ class Player():
         near *= 20
 
         if near.x != 0:
+            # There's a wierd camera bug here.
             #angle = atan2(near.z + camp.y - self.position.y, near.x + camp.x - self.position.x)
             angle = atan2(near.z, near.x)
         else:
@@ -52,6 +82,9 @@ class Player():
 
         self.angle = angle
         self.np.setHpr(degrees(angle), 0, 0)
+
+        if self.hp < 0.0:
+            self.dead = True
 
         return
 
@@ -67,8 +100,8 @@ class Player():
     def move_down(self, switch):
         self.down_move = switch
     
-    def activate(self):
-        self.app.spawn_bullet(self)
+    def activate(self, switch):
+        self.activate_switch = switch
 
 
 

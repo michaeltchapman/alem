@@ -1,0 +1,10 @@
+<rml>
+    <head>
+        <title>Alem</title>
+        <link type="text/rcss" href="alem.rcss" />
+        <link type="text/rcss" href="grid.rcss" />
+    </head>
+    <body>
+        <h1 id="health">100</h1>
+    </body>
+</rml>

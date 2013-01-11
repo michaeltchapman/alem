@@ -6,11 +6,14 @@ from direct.task import Task
 
 from random import randint, random, uniform
 
-from panda3d.core import Point2, Point3, Texture
+from panda3d.core import Point2, Point3, Texture, CollisionTraverser
+from panda3d.rocket import LoadFontFace, RocketRegion, RocketInputHandler
+
 
 from player import Player
 from enemy import Enemy, EnemyManager
-from bullet import Bullet
+from bullet import Bullet, BulletManager
+
 
 from loader import set_app, load_object
 
@@ -22,6 +25,20 @@ class Alem(ShowBase):
 
         app = self
 
+        # Rocket Gui
+        LoadFontFace("gui/Raleway.otf")
+        self.region = RocketRegion.make('pandaRocket', app.win)
+        self.region.setActive(1)
+        self.context = self.region.getContext()
+        self.hud = self.context.LoadDocument('gui/hud.rml')
+        ih = RocketInputHandler()
+        app.mouseWatcher.attachNewNode(ih)
+        self.region.setInputHandler(ih)
+        self.hud.Show()
+
+        self.cTrav = CollisionTraverser('coltrav')
+        self.cTrav.showCollisions(self.render)
+
         self.scene = []
         self.player = Player(self)
         self.scene.append(self.player)
@@ -30,6 +47,8 @@ class Alem(ShowBase):
 
         self.enemy_manager = EnemyManager(self)
         self.enemies = self.gen_enemies(self.scene)
+
+        self.bullet_manager = BulletManager(self)
         self.bullet_count = 0
 
         self.taskMgr.add(self.update, "update")
@@ -37,6 +56,7 @@ class Alem(ShowBase):
         self.mouse_pos = Point2(0,0)
 
         self.set_keys()
+
 
     def camera_task(self):    
         self.camera.setPos(self.player.position.x, self.player.position.y , 20)
@@ -58,7 +78,8 @@ class Alem(ShowBase):
         self.accept("s", self.player.move_down, [True])
         self.accept("s-up", self.player.move_down, [False])
 
-        self.accept("mouse1", self.player.activate, [])
+        self.accept("mouse1", self.player.activate, [True])
+        self.accept("mouse1-up", self.player.activate, [False])
 
     def update(self, task):
         if(self.mouseWatcherNode.hasMouse()):
@@ -66,14 +87,21 @@ class Alem(ShowBase):
             self.mouse_pos.y = self.mouseWatcherNode.getMouseY()
 
         self.camera_task()
+        self.cTrav.traverse(self.render)
         for entity in self.scene:
             entity.update(task.time)
         self.camera_task()
+        self.update_hud()
         return Task.cont
 
+
+    def update_hud(self):
+        self.hud.GetElementById("health").last_child.text = "%d" % self.player.hp
+
+    # should move creation into the manager
     def gen_enemies(self, scene):
         enemies = []
-        for i in range(randint(1,100)):
+        for i in range(randint(50,100)):
         #for i in range(1):
             enemy = Enemy(Point3(uniform(5,40), uniform(5,40), 0), i, self, self.enemy_manager)
             #enemy = Enemy(Point3(5.0,5.0,0.0), i, self)
@@ -97,10 +125,7 @@ class Alem(ShowBase):
 
     # probably put this here since it's creating scene entities?
     def spawn_bullet(self, player):
-        self.scene.append(Bullet(self,player,self.bullet_count))
-
-
-
+        self.bullet_manager.create_bullet(player)
 
 
 if __name__ == "__main__":

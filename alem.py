@@ -8,6 +8,7 @@ from random import randint, random, uniform
 
 from panda3d.core import Point2, Point3, Texture, CollisionTraverser
 from panda3d.rocket import LoadFontFace, RocketRegion, RocketInputHandler
+from panda3d.ai import AIWorld, AICharacter
 
 
 from player import Player
@@ -37,7 +38,10 @@ class Alem(ShowBase):
         self.hud.Show()
 
         self.cTrav = CollisionTraverser('coltrav')
-        self.cTrav.showCollisions(self.render)
+        #self.cTrav.showCollisions(self.render)
+        self.ai_world = AIWorld(render)
+
+        self.enableParticles()
 
         self.scene = []
         self.player = Player(self)
@@ -56,6 +60,10 @@ class Alem(ShowBase):
         self.mouse_pos = Point2(0,0)
 
         self.set_keys()
+
+        self.music = self.loader.loadSfx('sounds/onegameamonthjan.wav')
+        self.music.setVolume(0.2)
+        self.music.play()
 
 
     def camera_task(self):    
@@ -87,6 +95,7 @@ class Alem(ShowBase):
             self.mouse_pos.y = self.mouseWatcherNode.getMouseY()
 
         self.camera_task()
+        self.ai_world.update()
         self.cTrav.traverse(self.render)
         for entity in self.scene:
             entity.update(task.time)
@@ -126,6 +135,7 @@ class Alem(ShowBase):
     # probably put this here since it's creating scene entities?
     def spawn_bullet(self, player):
         self.bullet_manager.create_bullet(player)
+
 
 
 if __name__ == "__main__":

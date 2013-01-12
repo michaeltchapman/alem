@@ -48,7 +48,7 @@ class Bullet():
         self.cn = self.np.attachNewNode(CollisionNode('bullet_cn_%d' % index))
         self.cs = CollisionSphere(self.model.getPos(), 1)
         self.cn.node().addSolid(self.cs)
-        self.cn.show()
+        #self.cn.show()
 
         self.cn.node().setFromCollideMask(BitMask32(0x00))
         self.cn.node().setIntoCollideMask(BitMask32(0x10))

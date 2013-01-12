@@ -31,7 +31,7 @@ class Player():
         self.cs = CollisionSphere(0,0.0,0.0,0.25)
         self.cn.node().addSolid(self.cs)
 
-        self.cn.show()
+        #self.cn.show()
 
         self.cqueue = CollisionHandlerQueue()
         app.cTrav.addCollider(self.cn, self.cqueue)
@@ -40,6 +40,9 @@ class Player():
         self.cn.node().setFromCollideMask(BitMask32(0x01))
 
         self.last_activated = 0.0
+
+        self.rifle_sound = app.loader.loadSfx('sounds/rifle2.wav')
+        self.rifle_sound.setVolume(0.2)
 
     def update(self, timer):
 
@@ -54,6 +57,7 @@ class Player():
         if self.activate_switch and self.last_activated - timer + self.activate_delay < 0.0:
             self.app.spawn_bullet(self)
             self.last_activated = timer
+            self.rifle_sound.play()
 
         if self.left_move:
             self.position.x = self.position.x - self.move_speed

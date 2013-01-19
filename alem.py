@@ -14,6 +14,7 @@ from panda3d.ai import AIWorld, AICharacter
 from player import Player
 from enemy import Enemy, EnemyManager
 from bullet import Bullet, BulletManager
+from tree import Tree
 
 
 from loader import set_app, load_object
@@ -65,9 +66,17 @@ class Alem(ShowBase):
         self.music.setVolume(0.2)
         self.music.play()
 
+        self.box = loader.loadModel("models/box")
+        self.box.setPos(3,3,0)
+        self.box.setScale(1)
+        self.box.reparentTo(self.render)
+
+        #self.tree = Tree(self,Point3(7,1,0),1)
+        self.trees = self.gen_trees()
+
 
     def camera_task(self):    
-        self.camera.setPos(self.player.position.x, self.player.position.y , 20)
+        self.camera.setPos(self.player.position.x, self.player.position.y , 400)
         self.camera.setHpr(0,-90,0)
 
     def get_cam(self):
@@ -106,31 +115,45 @@ class Alem(ShowBase):
 
     def update_hud(self):
         self.hud.GetElementById("health").last_child.text = "%d" % self.player.hp
+        self.hud.GetElementById("score").last_child.text = "%d" % self.player.score
+
+        self.hud.GetElementById("wood").last_child.text = "%d" % self.player.wood
+        self.hud.GetElementById("stone").last_child.text = "%d" % self.player.stone
+        self.hud.GetElementById("souls").last_child.text = "%d" % self.player.souls
+
 
     # should move creation into the manager
     def gen_enemies(self, scene):
         enemies = []
         for i in range(randint(50,100)):
         #for i in range(1):
-            enemy = Enemy(Point3(uniform(5,40), uniform(5,40), 0), i, self, self.enemy_manager)
-            #enemy = Enemy(Point3(5.0,5.0,0.0), i, self)
+            enemy = Enemy(Point3(uniform(-400,400), uniform(-400,400), 0), i, self, self.enemy_manager, uniform(1,3), randint(1,4))
+            #enemy = Enemy(Point3(30.0,30.0,0.0), i, self, self.enemy_manager, 1, 1)
             enemies.append(enemy)
             scene.append(enemy)
+        return enemies    
 
     # make this configurable
     def gen_background(self):
-        bg_x = 5
-        bg_y = 5
+        bg_x = 50
+        bg_y = 50
 
         tile_count = 10
 
         backgrounds = []
 
-        for i in range(10):
-            for j in range(10):
-                backgrounds.append(load_object("grass", pos = Point2(i*bg_x, j*bg_y), transparency = False, scale = 5))
+        for i in range(-10,10):
+            for j in range(-10,10):
+                backgrounds.append(load_object("grass", pos = Point2(i*bg_x, j*bg_y), transparency = False, scale = 50))
 
         return backgrounds
+
+    def gen_trees(self):
+        trees = []
+        for i in range(randint(20,40)):
+            trees.append(Tree(self, Point3(uniform(-100,100), uniform(-100,100), 0), i))
+        return trees    
+
 
     # probably put this here since it's creating scene entities?
     def spawn_bullet(self, player):

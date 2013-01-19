@@ -28,10 +28,10 @@ class BulletManager():
         return self.bullets[bullet_id]
 
 class Bullet():
-    movespeed = 0.1
+    movespeed = 0.4
     def __init__(self, app, launched_by, index):
         self.app = app
-        self.model = load_object("bullet", pos=Point2(0,0), depth=1)
+        self.model = load_object("bullet", pos=Point2(0,0), depth=1, scale=2.0)
 
         self.launched_by = launched_by
         self.deleted = False

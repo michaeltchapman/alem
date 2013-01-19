@@ -1,4 +1,5 @@
-from panda3d.core import Point2, Point3, NodePath, CollisionNode, CollisionSphere, CollisionHandlerQueue, BitMask32
+from panda3d.core import Point2, Point3, NodePath, CollisionNode
+from panda3d.core import CollisionSphere, CollisionHandlerQueue, BitMask32, Texture
 from math import atan2, pi, degrees
 from sys import path
 
@@ -9,29 +10,35 @@ class Player():
     down_move = False
     activate_switch = False
 
-    move_speed = 0.05
+    move_speed = 0.9
     activate_delay = 0.07
 
     def __init__(self, app):
-        self.position = Point3(6,6,0)
+        self.position = Point3(-30,-30,0)
         self.hp = 100
+
+        self.points = 0
+        self.wood = 0
+        self.stone = 0
+        self.souls = 0
+
         self.dead = False
         self.np = app.render.attachNewNode("player")
         self.np.setPos(self.position)
 
         self.model = app.loader.loadModel('models/aneta')
-        #self.model = app.loader.loadModel('models/box')
+
         self.model.reparentTo(self.np)
-        self.model.setScale(0.5)
-        self.model.setPos(0,0, 0)
+        self.model.setScale(8.0)
+        self.model.setPos(0,0,0)
         self.model.setHpr(90,0,0)
         self.app = app
 
         self.cn = self.np.attachNewNode(CollisionNode('player'))
-        self.cs = CollisionSphere(0,0.0,0.0,0.25)
+        self.cs = CollisionSphere(0,0.0,0.0,4.0)
         self.cn.node().addSolid(self.cs)
 
-        #self.cn.show()
+        self.cn.show()
 
         self.cqueue = CollisionHandlerQueue()
         app.cTrav.addCollider(self.cn, self.cqueue)

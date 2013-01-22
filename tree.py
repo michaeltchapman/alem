@@ -23,7 +23,7 @@ class Tree(object):
         self.model.setScale(2)
 
         self.cn = self.np.attachNewNode(CollisionNode('tree_c_%d' % index))
-        self.cs = CollisionSphere(0,0.0,0.0,1)
+        self.cs = CollisionSphere(0,0.0,0.0,6)
         self.cn.node().addSolid(self.cs)
 
 

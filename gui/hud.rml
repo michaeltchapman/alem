@@ -5,6 +5,22 @@
         <link type="text/rcss" href="grid.rcss" />
     </head>
     <body>
-        <h1 id="health">100</h1>
+        <div class="container_12">
+            <div class="grid_1 prefix_1 suffix_1">
+                <h1 id="health">100</h1>
+            </div>    
+            <div class="grid_1 prefix_1 suffix_7">
+                <h1 id="score">0</h1>
+            </div>    
+            <div class="grid_1 prefix_1 suffix_1">
+            <h1 id="wood">0</h1>
+            </div>    
+            <div class="grid_1 prefix_1 suffix_1">
+            <h1 id="stone">0</h1>
+            </div>    
+            <div class="grid_1 prefix_1 suffix_4">
+            <h1 id="souls">0</h1>
+            </div>    
+        </div>    
     </body>
 </rml>

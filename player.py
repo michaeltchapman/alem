@@ -17,7 +17,7 @@ class Player():
         self.position = Point3(-30,-30,0)
         self.hp = 100
 
-        self.points = 0
+        self.score = 0
         self.wood = 0
         self.stone = 0
         self.souls = 0
@@ -38,7 +38,7 @@ class Player():
         self.cs = CollisionSphere(0,0.0,0.0,4.0)
         self.cn.node().addSolid(self.cs)
 
-        self.cn.show()
+        #self.cn.show()
 
         self.cqueue = CollisionHandlerQueue()
         app.cTrav.addCollider(self.cn, self.cqueue)
@@ -48,7 +48,7 @@ class Player():
 
         self.last_activated = 0.0
 
-        self.rifle_sound = app.loader.loadSfx('sounds/rifle2.wav')
+        self.rifle_sound = app.loader.loadSfx('sounds/rifle2.ogg')
         self.rifle_sound.setVolume(0.2)
 
     def update(self, timer):

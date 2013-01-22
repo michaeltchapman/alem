@@ -1,7 +1,10 @@
 from panda3d.core import Point2, Vec3, CollisionSphere, CollisionNode, BitMask32
-from math import radians, cos, sin
+from math import radians, cos, sin, hypot
 
 from loader import load_object
+
+def distance_check(obj1, obj2):
+    return hypot(obj1.x - obj2.x, obj1.y - obj2.y) > 200
 
 class BulletManager():
     def __init__(self, app):
@@ -27,19 +30,25 @@ class BulletManager():
         #return self.bullets[bullet_id.split['/'][-1]]
         return self.bullets[bullet_id]
 
+
+    def update(self, time):
+        for bullet in self.bullets.items():
+            if not bullet[1].deleted:
+                if distance_check(bullet[1].np.getPos(), self.app.player.np.getPos()):
+                    self.remove_bullet(bullet[0])
+
 class Bullet():
-    movespeed = 0.4
+    movespeed = 1.5
     def __init__(self, app, launched_by, index):
         self.app = app
-        self.model = load_object("bullet", pos=Point2(0,0), depth=1, scale=2.0)
-
+        self.model = load_object("bullet", pos=Point2(0,0), depth=1, scale=10.0)
         self.launched_by = launched_by
         self.deleted = False
 
         self.np = app.render.attachNewNode("bullet_%d" % index)
         self.np.setHpr(self.launched_by.np.getHpr())
         self.np.setScale(0.1)
-
+ 
         rads = radians(self.launched_by.np.getHpr().x)
         self.movement = Vec3(self.movespeed * cos(rads), self.movespeed * sin(rads), 0)
         self.model.reparentTo(self.np)

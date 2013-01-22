@@ -19,9 +19,14 @@ from tree import Tree
 
 from loader import set_app, load_object
 
+import sys
+import cProfile
+
 class Alem(ShowBase):
     def __init__(self):
         ShowBase.__init__(self)
+
+        base.setFrameRateMeter(True)
 
         set_app(self)
 
@@ -62,7 +67,7 @@ class Alem(ShowBase):
 
         self.set_keys()
 
-        self.music = self.loader.loadSfx('sounds/onegameamonthjan.wav')
+        self.music = self.loader.loadSfx('sounds/onegameamonthjan.ogg')
         self.music.setVolume(0.2)
         self.music.play()
 
@@ -98,12 +103,16 @@ class Alem(ShowBase):
         self.accept("mouse1", self.player.activate, [True])
         self.accept("mouse1-up", self.player.activate, [False])
 
+        self.accept("escape", sys.exit)
+
     def update(self, task):
         if(self.mouseWatcherNode.hasMouse()):
             self.mouse_pos.x = self.mouseWatcherNode.getMouseX()
             self.mouse_pos.y = self.mouseWatcherNode.getMouseY()
 
         self.camera_task()
+        # Bullet reaping
+        self.bullet_manager.update(task.time)
         self.ai_world.update()
         self.cTrav.traverse(self.render)
         for entity in self.scene:
@@ -138,14 +147,19 @@ class Alem(ShowBase):
         bg_x = 50
         bg_y = 50
 
-        tile_count = 10
+        tile_count = 20
 
         backgrounds = []
 
-        for i in range(-10,10):
-            for j in range(-10,10):
-                backgrounds.append(load_object("grass", pos = Point2(i*bg_x, j*bg_y), transparency = False, scale = 50))
+        self.bgnp = self.render.attachNewNode("bg")
 
+        for i in range(-tile_count,tile_count):
+            for j in range(-tile_count,tile_count):
+                backgrounds.append(load_object("grass", pos = Point2(i*bg_x, j*bg_y), transparency = False, scale = 50))
+        for background in backgrounds:
+            background.reparentTo(self.bgnp)
+
+        self.bgnp.flattenStrong()    
         return backgrounds
 
     def gen_trees(self):
@@ -159,8 +173,30 @@ class Alem(ShowBase):
     def spawn_bullet(self, player):
         self.bullet_manager.create_bullet(player)
 
+def _wrap_with_profiling(entry_point):
+    """
+    run the given argumentless function entry_point using the python profiler
 
+    trap any SystemExits and KeyboardInterrupts so we can
+    still spam the profing results to stdout
+    """
+    def wrapped_entry_point():
+        import pstats
+        import cProfile
+        p = cProfile.Profile()
+        def safety_net(entry_point):
+            try:
+                entry_point(arg)
+            except SystemExit:
+                pass
+            except KeyboardInterrupt:
+                pass
+        p.runcall(lambda : safety_net(entry_point))
+        s = pstats.Stats(p)
+        s.sort_stats('cumulative').print_stats(25)
+    return wrapped_entry_point
 
 if __name__ == "__main__":
     app = Alem()
-    app.run()
+    cProfile.run('app.run()', '/home/mc/projects/alem/alem/profile')
+    #app.run()

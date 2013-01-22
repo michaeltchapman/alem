@@ -7,7 +7,7 @@ from panda3d.ai import AIWorld, AICharacter
 from direct.particles.Particles import Particles
 from direct.particles.ParticleEffect import ParticleEffect
 from direct.particles.ForceGroup import ForceGroup
-from panda3d.physics import BaseParticleEmitter,BaseParticleRenderer
+from panda3d.physics import BaseParticleEmitter,BaseParticleRenderer,PointParticleRenderer
 
 
 from direct.actor.Actor import Actor
@@ -17,7 +17,7 @@ class EnemyManager():
         self.model = Actor('models/panda-model', {"walk" : "models/panda-walk4"})
         self.model.setHpr(0,0,0)
         self.model.setPos(0,0,0)
-        self.model.setScale(0.0005)
+        self.model.setScale(0.01)
         self.model.setPlayRate(2.0, "walk")
         self.model.loop("walk")
         self.model.hide()
@@ -33,29 +33,59 @@ class EnemyManager():
         self.enemies[enemy].apply_effect(target, timer)
 
 class Enemy():
-    movespeed = 0.01
-    activate_delay = 0.1
-    def __init__(self, pos, index, app, manager):
+    def __init__(self, pos, index, app, manager, level, style):
         self.position = pos
         self.app = app
-        self.hp = 50
+        self.np = app.render.attachNewNode("enemy%d" % index)
+
+        if style == 1:
+            self.np.setColorScale(1.0, 1.0, 1.0, 1.0)
+            self.movespeed = 2.5
+            self.max_movespeed = 30
+        else:
+            self.movespeed = 0.5
+            self.max_movespeed = 25
+
+        if style == 2:
+            self.activate_delay = 0.01
+            self.np.setColorScale(0.6, 1.0, 1.0, 1.0)
+        else:
+            self.activate_delay = 0.1
+
+        if style == 3:
+            self.hp = 50 * level
+            self.np.setColorScale(0.0, 1.0, 0.5, 1.0)
+        else:
+            self.hp = 100 * level
+
+        if style == 4:
+            self.damage = 20
+            self.np.setColorScale(1.0, 1.0, 0.0, 1.0)
+        else:
+            self.damage = 10
+
         self.dead = 0.0
+        self.level = level
+        self.style = style
+        self.particle_clean = False
 
         # this allows us to detach the instance nodepath
         # on death, but keep one with no model to attach particle effects
         self.dnp = app.render.attachNewNode("enemy_top%d" % index)
 
-        self.np = app.render.attachNewNode("enemy%d" % index)
         self.np.setPos(self.position)
 
         self.np.setHpr(uniform(1,360),0,0)
+        self.np.setScale(level)
 
-        colsize = 0.2
+        colsize = 3.0
         self.cn = self.np.attachNewNode(CollisionNode('enemy_cn_%d' % index))
-        self.cs0 = CollisionSphere(colsize/2,0.0,0.0,colsize)
-        self.cs1 = CollisionSphere(-colsize/2,0.0,0.0,colsize)
+        self.cs0 = CollisionSphere(0.0, colsize/2,0.0,colsize)
+        self.cs1 = CollisionSphere(0.0, -colsize/2,0.0,colsize)
+        self.cs2 = CollisionSphere(0.0, -colsize/3*4,0.0,colsize/2)
         self.cn.node().addSolid(self.cs0)
         self.cn.node().addSolid(self.cs1)
+        self.cn.node().addSolid(self.cs2)
         #self.cn.show() # debug
 
         self.cqueue = CollisionHandlerQueue()
@@ -70,13 +100,15 @@ class Enemy():
 
 
         # name, nodepath, mass, move_force, max_force
-        self.ai_char = AICharacter('enemy_ai_%d' % index, self.np, 100, 0.05, 5)
+        self.ai_char = AICharacter('enemy_ai_%d' % index, self.np, 100, self.movespeed, self.max_movespeed)
         app.ai_world.addAiChar(self.ai_char)
-        self.ai_char.getAiBehaviors().pursue(app.player.np)
+        self.ai_b = self.ai_char.getAiBehaviors()
+        self.ai_b.pursue(app.player.np)
 
         self.load_particle_config()
     
     def update(self, time):
+
         a = 0
         # Handle collsions
         for i in range(self.cqueue.getNumEntries()):
@@ -87,19 +119,13 @@ class Enemy():
                bullet.apply_effect(self)
                self.app.bullet_manager.remove_bullet(collided_name)
 
-           #handle player    
-           #elif ("player" in collided_name):
-           #    self.apply_effect(self.app.player)
-           
-        # This is all done by PandaAI?
-        # turn to look at player
-       
         if self.cqueue.getNumEntries() != 0:
             self.np.setColorScale(1.0, self.hp / 100.0, self.hp / 100.0, 1.0)
-        
+       
+        """
         desired = self.app.player.position - self.np.getPos()
         angle = degrees(atan2(desired.y, desired.x))
-
+        
         hpr = self.np.getHpr()
         if hpr.x > 360:
             hpr.x = hpr.x - 360
@@ -121,7 +147,7 @@ class Enemy():
 
         new = Vec3(diff, 0, 0) + hpr
         #self.np.setHpr(new)
-        """
+        
         # move forward
         r = radians(new.x)
         curr = self.np.getPos()
@@ -132,26 +158,22 @@ class Enemy():
             self.dead = time 
             self.app.scene.remove(self)
             # Create particle effect before we go
-            #self.model.hide()
             self.dnp.setPos(self.np.getPos())
-            self.particles.start(self.dnp)
+            self.particles.start(parent = self.dnp, renderParent = self.app.render)
             self.np.detachNode()
-            #self.np.hide()
-            #self.np.reparentTo(render)
 
-        #if time - self.dead > 5.0:
-            #self.dnp.hide()
-            #self.np.detachNode()
-            #self.particles.softStop()
+            # Drop some loot
+            # Give the player some points
+            self.app.player.score = self.app.player.score + 100
 
     def apply_effect(self, target, timer):
         if self.last_activated - timer + self.activate_delay < 0.0:
             self.last_activated = timer
-            target.hp = target.hp - 10
+            target.hp = target.hp - self.damage
 
     def load_particle_config(self):
         self.particles = ParticleEffect()
-
+        self.particles.reset()
         self.particles.setPos(0.000, 0.000, 0.000)
         self.particles.setHpr(0.000, 0.000, 0.000)
         self.particles.setScale(1.000, 1.000, 1.000)
@@ -170,24 +192,24 @@ class Enemy():
         # Factory parameters
         p0.factory.setLifespanBase(1.0000)
         p0.factory.setLifespanSpread(0.0000)
-        p0.factory.setMassBase(2.0000)
+        p0.factory.setMassBase(1.0000)
         p0.factory.setMassSpread(0.0100)
-        p0.factory.setTerminalVelocityBase(400.0000)
+        p0.factory.setTerminalVelocityBase(1200.0000)
         p0.factory.setTerminalVelocitySpread(0.0000)
         # Point factory parameters
         # Renderer parameters
         p0.renderer.setAlphaMode(BaseParticleRenderer.PRALPHAOUT)
-        p0.renderer.setUserAlpha(0.57)
+        p0.renderer.setUserAlpha(0.05)
         # Sprite parameters
         p0.renderer.setTexture(self.app.loader.loadTexture('effects/dust.png'))
-        p0.renderer.setColor(Vec4(1.00, 0.10, 0.10, 1.00))
-        p0.renderer.setXScaleFlag(0)
-        p0.renderer.setYScaleFlag(0)
+        p0.renderer.setColor(Vec4(1.00, 0.10, 0.10, 0.50))
+        p0.renderer.setXScaleFlag(2)
+        p0.renderer.setYScaleFlag(2)
         p0.renderer.setAnimAngleFlag(0)
-        p0.renderer.setInitialXScale(0.0100)
-        p0.renderer.setFinalXScale(0.0200)
-        p0.renderer.setInitialYScale(0.0100)
-        p0.renderer.setFinalYScale(0.0200)
+        p0.renderer.setInitialXScale(0.100 * self.level)
+        p0.renderer.setFinalXScale(0.200 * self.level)
+        p0.renderer.setInitialYScale(0.100 * self.level)
+        p0.renderer.setFinalYScale(0.200 * self.level)
         p0.renderer.setNonanimatedTheta(0.0000)
         p0.renderer.setAlphaBlendMethod(BaseParticleRenderer.PPBLENDLINEAR)
         p0.renderer.setAlphaDisable(0)
@@ -204,4 +226,3 @@ class Enemy():
         f0 = ForceGroup('gravity')
         # Force parameters
         self.particles.addForceGroup(f0)
-

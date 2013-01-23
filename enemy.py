@@ -163,6 +163,8 @@ class Enemy():
             self.np.detachNode()
 
             # Drop some loot
+            #self.app.item_manager.add_item(self.np.getPos(), "soul", self.level)
+            self.app.item_manager.add_item(self.np.getPos(), "upgrade", self.level)
             # Give the player some points
             self.app.player.score = self.app.player.score + 100
 

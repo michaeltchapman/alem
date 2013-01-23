@@ -10,12 +10,18 @@ class Player():
     down_move = False
     activate_switch = False
 
-    move_speed = 0.9
-    activate_delay = 0.07
-
     def __init__(self, app):
         self.position = Point3(-30,-30,0)
+
+        #upgradeable stats
         self.hp = 100
+        self.move_speed = 0.9
+        self.fire_rate = 0.07
+        self.build_delay = 1.0
+        self.fire_arcs = 1
+        self.bullet_speed = 1.2
+        self.bullet_explodesize = 0.5
+        self.bullet_damage = 20
 
         self.score = 0
         self.wood = 0
@@ -52,16 +58,21 @@ class Player():
         self.rifle_sound.setVolume(0.2)
 
     def update(self, timer):
-
-
         if self.cqueue.getNumEntries() != 0:
             self.np.setColorScale(1.0, self.hp / 100.0, self.hp / 100.0, 1.0)
         for i in range(self.cqueue.getNumEntries()):
             collided_name = self.cqueue.getEntry(i).getIntoNodePath().getName()
+            # enemy is attacking us
             if collided_name[0] == 'e':
                 self.app.enemy_manager.handle_collision(collided_name, self, timer)
+                #self.cqueue.getEntry(i).getIntoNodePath().getParent().apply_effect(self,timer)
+                # TODO play sound
+
+            # pick up item    
+            if collided_name[0] == 'i':
+                self.app.item_manager.pickup(collided_name, self)
                 
-        if self.activate_switch and self.last_activated - timer + self.activate_delay < 0.0:
+        if self.activate_switch and self.last_activated - timer + self.fire_rate < 0.0:
             self.app.spawn_bullet(self)
             self.last_activated = timer
             self.rifle_sound.play()

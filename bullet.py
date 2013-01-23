@@ -38,16 +38,17 @@ class BulletManager():
                     self.remove_bullet(bullet[0])
 
 class Bullet():
-    movespeed = 1.5
-    def __init__(self, app, launched_by, index):
+    def __init__(self, app, launched_by, index, movespeed=1.5, scale=0.1):
         self.app = app
         self.model = load_object("bullet", pos=Point2(0,0), depth=1, scale=10.0)
         self.launched_by = launched_by
         self.deleted = False
 
+        self.movespeed = movespeed
+
         self.np = app.render.attachNewNode("bullet_%d" % index)
         self.np.setHpr(self.launched_by.np.getHpr())
-        self.np.setScale(0.1)
+        self.np.setScale(scale)
  
         rads = radians(self.launched_by.np.getHpr().x)
         self.movement = Vec3(self.movespeed * cos(rads), self.movespeed * sin(rads), 0)

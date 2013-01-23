@@ -6,7 +6,7 @@ from direct.task import Task
 
 from random import randint, random, uniform
 
-from panda3d.core import Point2, Point3, Texture, CollisionTraverser
+from panda3d.core import Point2, Point3, Texture, CollisionTraverser, Vec3
 from panda3d.rocket import LoadFontFace, RocketRegion, RocketInputHandler
 from panda3d.ai import AIWorld, AICharacter
 
@@ -15,6 +15,7 @@ from player import Player
 from enemy import Enemy, EnemyManager
 from bullet import Bullet, BulletManager
 from tree import Tree
+from items import Item, Soul, Upgrade, ItemManager
 
 
 from loader import set_app, load_object
@@ -71,10 +72,12 @@ class Alem(ShowBase):
         self.music.setVolume(0.2)
         self.music.play()
 
-        self.box = loader.loadModel("models/box")
-        self.box.setPos(3,3,0)
-        self.box.setScale(1)
-        self.box.reparentTo(self.render)
+        self.item_manager = ItemManager(self)
+
+        #self.box = loader.loadModel("models/box")
+        #self.box.setPos(3,3,0)
+        #self.box.setScale(1)
+        #self.box.reparentTo(self.render)
 
         #self.tree = Tree(self,Point3(7,1,0),1)
         self.trees = self.gen_trees()
@@ -173,30 +176,6 @@ class Alem(ShowBase):
     def spawn_bullet(self, player):
         self.bullet_manager.create_bullet(player)
 
-def _wrap_with_profiling(entry_point):
-    """
-    run the given argumentless function entry_point using the python profiler
-
-    trap any SystemExits and KeyboardInterrupts so we can
-    still spam the profing results to stdout
-    """
-    def wrapped_entry_point():
-        import pstats
-        import cProfile
-        p = cProfile.Profile()
-        def safety_net(entry_point):
-            try:
-                entry_point(arg)
-            except SystemExit:
-                pass
-            except KeyboardInterrupt:
-                pass
-        p.runcall(lambda : safety_net(entry_point))
-        s = pstats.Stats(p)
-        s.sort_stats('cumulative').print_stats(25)
-    return wrapped_entry_point
-
 if __name__ == "__main__":
     app = Alem()
-    cProfile.run('app.run()', '/home/mc/projects/alem/alem/profile')
-    #app.run()
+    app.run()

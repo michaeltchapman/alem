@@ -114,7 +114,7 @@ class Enemy():
         for i in range(self.cqueue.getNumEntries()):
            collided_name = self.cqueue.getEntry(i).getIntoNodePath().getName()
            #handle bullets
-           if ("bullet" in collided_name):
+           if collided_name[0] == 'b': 
                bullet = self.app.bullet_manager.get_bullet(collided_name)
                bullet.apply_effect(self)
                self.app.bullet_manager.remove_bullet(collided_name)
@@ -163,8 +163,7 @@ class Enemy():
             self.np.detachNode()
 
             # Drop some loot
-            #self.app.item_manager.add_item(self.np.getPos(), "soul", self.level)
-            self.app.item_manager.add_item(self.np.getPos(), "upgrade", self.level)
+            self.app.item_manager.add_item(self.np.getPos(), "soul", self.level)
             # Give the player some points
             self.app.player.score = self.app.player.score + 100
 
@@ -172,6 +171,11 @@ class Enemy():
         if self.last_activated - timer + self.activate_delay < 0.0:
             self.last_activated = timer
             target.hp = target.hp - self.damage
+        if target.np.getName()[0] == 't':
+            target.pursuers.append(self)
+            #self.ai_b = self.ai_char.getAiBehaviors()
+            #self.ai_b.pursue(self.np.getPos())
+            self.ai_b.pauseAi("pursue")
 
     def load_particle_config(self):
         self.particles = ParticleEffect()

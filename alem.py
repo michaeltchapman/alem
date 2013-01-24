@@ -14,7 +14,7 @@ from panda3d.ai import AIWorld, AICharacter
 from player import Player
 from enemy import Enemy, EnemyManager
 from bullet import Bullet, BulletManager
-from tree import Tree
+from tree import Tree, TreeManager
 from items import Item, Soul, Upgrade, ItemManager
 
 
@@ -74,12 +74,7 @@ class Alem(ShowBase):
 
         self.item_manager = ItemManager(self)
 
-        #self.box = loader.loadModel("models/box")
-        #self.box.setPos(3,3,0)
-        #self.box.setScale(1)
-        #self.box.reparentTo(self.render)
-
-        #self.tree = Tree(self,Point3(7,1,0),1)
+        self.tree_manager = TreeManager(self)
         self.trees = self.gen_trees()
 
 
@@ -105,6 +100,9 @@ class Alem(ShowBase):
 
         self.accept("mouse1", self.player.activate, [True])
         self.accept("mouse1-up", self.player.activate, [False])
+
+        self.accept("mouse2", self.player.build, [True])
+        self.accept("mouse2-up", self.player.build, [False])
 
         self.accept("escape", sys.exit)
 
@@ -166,10 +164,8 @@ class Alem(ShowBase):
         return backgrounds
 
     def gen_trees(self):
-        trees = []
         for i in range(randint(20,40)):
-            trees.append(Tree(self, Point3(uniform(-100,100), uniform(-100,100), 0), i))
-        return trees    
+            self.tree_manager.add_tree(Point3(uniform(-100,100), uniform(-100,100), 0), 1)
 
 
     # probably put this here since it's creating scene entities?

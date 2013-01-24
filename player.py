@@ -9,6 +9,7 @@ class Player():
     up_move = False
     down_move = False
     activate_switch = False
+    secondary_switch = False
 
     def __init__(self, app):
         self.position = Point3(-30,-30,0)
@@ -17,7 +18,7 @@ class Player():
         self.hp = 100
         self.move_speed = 0.9
         self.fire_rate = 0.07
-        self.build_delay = 1.0
+        self.build_rate = 1.0
         self.fire_arcs = 1
         self.bullet_speed = 1.2
         self.bullet_explodesize = 0.5
@@ -53,6 +54,7 @@ class Player():
         self.cn.node().setFromCollideMask(BitMask32(0x01))
 
         self.last_activated = 0.0
+        self.last_built = 0.0
 
         self.rifle_sound = app.loader.loadSfx('sounds/rifle2.ogg')
         self.rifle_sound.setVolume(0.2)
@@ -105,6 +107,12 @@ class Player():
         self.angle = angle
         self.np.setHpr(degrees(angle), 0, 0)
 
+        if self.secondary_switch and self.last_built - timer + self.build_rate < 0.0 and self.souls != 0:
+            print near
+            self.app.tree_manager.add_tree(Point3(near.x*20, near.z*20, 0) + self.np.getPos(), self.souls)
+            self.last_built = timer
+            self.souls = 0
+
         if self.hp < 0.0:
             self.dead = True
 
@@ -125,6 +133,8 @@ class Player():
     def activate(self, switch):
         self.activate_switch = switch
 
+    def build(self, switch):
+        self.secondary_switch = switch
 
 
 

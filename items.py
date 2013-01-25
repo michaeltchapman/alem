@@ -50,15 +50,15 @@ class Upgrade(object):
     def generate_upgrade(self,level):
         # Distribute this according to value
         # (create some rarity)
-        #t = types[randint(0,len(types)-1)]
-        t = types[0]
+        t = types[randint(0,len(types)-1)]
+        #t = types[0]
 
         if t == "hp":
-            r = randint(1,4)*10.0*level
+            r = 10.0*level + 60
         if t == "move_speed":
-            r = 0.01
+            r = 0.05
         if t == "fire_rate":
-            r = 0.01
+            r = -0.001
         if t == "fire_arcs":
             r = 1
         if t == "bullet_speed":
@@ -66,7 +66,7 @@ class Upgrade(object):
         if t == "bullet_explodesize":
             r = level * 0.05
         if t == "bullet_damage":
-            r = randint(1,4)*10.0*level
+            r = 5.0*level
         return (t,r)    
 
     def apply_effect(self, target):

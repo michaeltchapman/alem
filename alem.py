@@ -25,6 +25,7 @@ import cProfile
 
 class Alem(ShowBase):
     def __init__(self):
+
         ShowBase.__init__(self)
 
         base.setFrameRateMeter(True)
@@ -101,8 +102,8 @@ class Alem(ShowBase):
         self.accept("mouse1", self.player.activate, [True])
         self.accept("mouse1-up", self.player.activate, [False])
 
-        self.accept("mouse2", self.player.build, [True])
-        self.accept("mouse2-up", self.player.build, [False])
+        self.accept("mouse3", self.player.build, [True])
+        self.accept("mouse3-up", self.player.build, [False])
 
         self.accept("escape", sys.exit)
 
@@ -114,6 +115,7 @@ class Alem(ShowBase):
         self.camera_task()
         # Bullet reaping
         self.bullet_manager.update(task.time)
+        self.enemy_manager.update(task.time)
         self.ai_world.update()
         self.cTrav.traverse(self.render)
         for entity in self.scene:
@@ -126,9 +128,6 @@ class Alem(ShowBase):
     def update_hud(self):
         self.hud.GetElementById("health").last_child.text = "%d" % self.player.hp
         self.hud.GetElementById("score").last_child.text = "%d" % self.player.score
-
-        self.hud.GetElementById("wood").last_child.text = "%d" % self.player.wood
-        self.hud.GetElementById("stone").last_child.text = "%d" % self.player.stone
         self.hud.GetElementById("souls").last_child.text = "%d" % self.player.souls
 
 
@@ -136,11 +135,26 @@ class Alem(ShowBase):
     def gen_enemies(self, scene):
         enemies = []
         for i in range(randint(50,100)):
+            self.enemy_manager.create_enemy(1.0)
         #for i in range(1):
-            enemy = Enemy(Point3(uniform(-400,400), uniform(-400,400), 0), i, self, self.enemy_manager, uniform(1,3), randint(1,4))
+        """
+            x = uniform(-900, 900)
+            if -100.0 < x < 100.0:
+                if x < 0.0:
+                    x = x - 200.0
+                if x >= 0.0:
+                    x = x + 200.0
+            y = uniform(-900, 900)
+            if -100.0 < y < 100.0:
+                if y < 0.0:
+                    y = y - 200.0
+                if y >= 0.0:
+                    y = y + 200.0
+            enemy = Enemy(Point3(x, y, 0), i, self, self.enemy_manager, uniform(1,3), randint(1,4))
             #enemy = Enemy(Point3(30.0,30.0,0.0), i, self, self.enemy_manager, 1, 1)
             enemies.append(enemy)
             scene.append(enemy)
+        """    
         return enemies    
 
     # make this configurable
@@ -164,13 +178,8 @@ class Alem(ShowBase):
         return backgrounds
 
     def gen_trees(self):
-        for i in range(randint(20,40)):
+        for i in range(randint(10,20)):
             self.tree_manager.add_tree(Point3(uniform(-100,100), uniform(-100,100), 0), 1)
-
-
-    # probably put this here since it's creating scene entities?
-    def spawn_bullet(self, player):
-        self.bullet_manager.create_bullet(player)
 
 if __name__ == "__main__":
     app = Alem()

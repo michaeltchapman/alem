@@ -17,12 +17,13 @@ class Player():
         #upgradeable stats
         self.hp = 100
         self.move_speed = 0.9
-        self.fire_rate = 0.07
+        self.fire_rate = 0.1
         self.build_rate = 1.0
         self.fire_arcs = 1
         self.bullet_speed = 1.2
         self.bullet_explodesize = 0.5
-        self.bullet_damage = 20
+        self.bullet_damage = 10
+        self.bullet_scale = 0.1
 
         self.score = 0
         self.wood = 0
@@ -73,9 +74,16 @@ class Player():
             # pick up item    
             if collided_name[0] == 'i':
                 self.app.item_manager.pickup(collided_name, self)
+                print "hp %f" % self.hp
+                print "move_speed %f" % self.move_speed
+                print "fire_rate %f" % self.fire_rate
+                print "fire_arcs %f" % self.fire_arcs
+                print "bullet_speed %f" % self.bullet_speed
+                print "bullet_explodesize %f" % self.bullet_explodesize
+                print "bullet_damage %f" % self.bullet_damage
                 
         if self.activate_switch and self.last_activated - timer + self.fire_rate < 0.0:
-            self.app.spawn_bullet(self)
+            self.app.bullet_manager.create_bullet(self, self.bullet_speed, self.bullet_scale, self.bullet_damage)
             self.last_activated = timer
             self.rifle_sound.play()
 
@@ -107,14 +115,15 @@ class Player():
         self.angle = angle
         self.np.setHpr(degrees(angle), 0, 0)
 
+        # need the click position for tree palcement
         if self.secondary_switch and self.last_built - timer + self.build_rate < 0.0 and self.souls != 0:
-            print near
             self.app.tree_manager.add_tree(Point3(near.x*20, near.z*20, 0) + self.np.getPos(), self.souls)
             self.last_built = timer
             self.souls = 0
 
-        if self.hp < 0.0:
+        if self.hp < 0.0 and self.dead == False:
             self.dead = True
+            self.app.scene.remove(self)
 
         return
 

@@ -12,8 +12,8 @@ class BulletManager():
         self.bullet_index = 0
         self.bullets = {}
 
-    def create_bullet(self, launched_by):
-        bullet = Bullet(self.app, launched_by, self.bullet_index)
+    def create_bullet(self, launched_by, speed=1.5, scale=0.1, damage=10):
+        bullet = Bullet(self.app, launched_by, self.bullet_index, speed, scale, damage)
         self.app.scene.append(bullet)
 
         self.bullets["bullet_cn_%d" % self.bullet_index] = bullet
@@ -38,11 +38,13 @@ class BulletManager():
                     self.remove_bullet(bullet[0])
 
 class Bullet():
-    def __init__(self, app, launched_by, index, movespeed=1.5, scale=0.1):
+    def __init__(self, app, launched_by, index, movespeed=1.5, scale=0.1, damage=10):
         self.app = app
         self.model = load_object("bullet", pos=Point2(0,0), depth=1, scale=10.0)
         self.launched_by = launched_by
         self.deleted = False
+
+        self.damage = damage
 
         self.movespeed = movespeed
 
@@ -51,9 +53,11 @@ class Bullet():
         self.np.setScale(scale)
  
         rads = radians(self.launched_by.np.getHpr().x)
-        self.movement = Vec3(self.movespeed * cos(rads), self.movespeed * sin(rads), 0)
+        self.movement = Vec3(cos(rads), sin(rads), 0)
         self.model.reparentTo(self.np)
         self.np.setPos(self.launched_by.np.getPos() + self.movement)
+
+        self.movement = self.movement * self.movespeed
 
         self.cn = self.np.attachNewNode(CollisionNode('bullet_cn_%d' % index))
         self.cs = CollisionSphere(self.model.getPos(), 1)
@@ -68,6 +72,6 @@ class Bullet():
         self.np.setPos(self.np.getPos() + self.movement)
 
     def apply_effect(self, target):
-        target.hp = target.hp - 10
+        target.hp = target.hp - self.damage
 
 
